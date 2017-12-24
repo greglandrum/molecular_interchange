@@ -45,3 +45,7 @@ In order to maximize efficiency, authors of toolkits may want to store precomput
 ## Toolkit-specific blocks
 - When parsing/writing an interchange document, toolkit-specific blocks that are not understood (or that haven't been parsed) should be passed along without modification.
 - If the contents of the main block are changed at all, all other toolkit-specific blocks should be removed.
+
+
+# Notes
+- atomproperties and bondproperties can have additional fields
