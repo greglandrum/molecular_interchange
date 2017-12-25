@@ -166,15 +166,17 @@ def jsontomol(text,strict=True):
             break
 
     m.UpdatePropertyCache(strict=strict)
+    m.SetIntProp("_StereochemDone",1)
     return m
 
 if(__name__=='__main__'):
     from rdkit.Chem import AllChem
     m = Chem.MolFromSmiles('c1ccccc1O/C=C\\[C@H]([NH3+])Cl')
-    AllChem.Compute2DCoords(m)
+    #AllChem.Compute2DCoords(m)
     m.SetProp("_Name","example 1")
     mjson = moltojson(m)
-    print(mjson)
+    #print(mjson)
     newm = jsontomol(mjson)
     print(Chem.MolToSmiles(newm))
+    assert(Chem.MolToSmiles(newm)==Chem.MolToSmiles(m))
     print(Chem.MolToMolBlock(newm))
