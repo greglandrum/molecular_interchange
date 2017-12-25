@@ -13,11 +13,14 @@ def moltojson(m,includePartialCharges=True):
     Chem.Kekulize(m)
     from io import StringIO
     sio = StringIO()
+    nm = "no name"
+    if m.HasProp("_Name"):
+        nm = m.GetProp("_Name")
     print("""{
-      "header":{"version":10, "name":"example molecule"},
+      "header":{"version":10, "name":"%s"},
       "atomDefaults":{"chiral":false,"impHs":0,"chg":0,"stereo":"unspecified","nrad":0},
       "bondDefaults":{"stereo":"unspecified","stereoAtoms":[],"bo":1},
-    """,file=sio)
+    """%nm,file=sio)
     print('"atoms":[',file=sio)
     for i,at in enumerate(m.GetAtoms()):
         obj = {"Z":at.GetAtomicNum()}
@@ -120,6 +123,12 @@ def jsontomol(text,strict=True):
         atm.SetChiralTag(tags[entry.get('stereo',atomDefaults.get('stereo','unspecified'))])
         atm.SetNumRadicalElectrons(entry.get('nRad',atomDefaults.get('nRad',0)))
         m.AddAtom(atm)
+    # ---------------------------------
+    #      Atom Properties
+    for entry in obj['atomProperties']:
+        # we ignore these for the moment
+        pass
+
     # ---------------------------------
     #      Bonds
     # at the moment we can't set bond stereo directly because all atoms need to be there, so hold
