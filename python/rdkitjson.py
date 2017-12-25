@@ -3,27 +3,26 @@
 # All Rights Reserved
 #
 import json
-from rdkit import Chem
+from rdkit import rdBase,Chem
 from rdkit.Chem import AllChem
 
 def moltojson(m,includePartialCharges=True):
-    """ does a bit of nicer formatting, which makes this longer than needed """
+    from collections import OrderedDict
     if includePartialCharges:
         AllChem.ComputeGasteigerCharges(m)
     Chem.Kekulize(m)
-    from io import StringIO
-    sio = StringIO()
+    obj = {}
     nm = "no name"
     if m.HasProp("_Name"):
         nm = m.GetProp("_Name")
-    print("""{
-      "header":{"version":10, "name":"%s"},
-      "atomDefaults":{"chiral":false,"impHs":0,"chg":0,"stereo":"unspecified","nrad":0},
-      "bondDefaults":{"stereo":"unspecified","stereoAtoms":[],"bo":1},
-    """%nm,file=sio)
-    print('"atoms":[',file=sio)
+    obj_type = OrderedDict
+    res = obj_type()
+    res['header'] = obj_type(version=10,name=nm)
+    res["atomDefaults"] = obj_type(Z=6,chiral=False,impHs=0,chg=0,stereo="unspecified",nrad=0)
+    res["bondDefaults"] = obj_type(bo=1,stereo="unspecified",stereoAtoms=[])
+    res["atoms"] = []
     for i,at in enumerate(m.GetAtoms()):
-        obj = {"Z":at.GetAtomicNum()}
+        obj = obj_type(Z=at.GetAtomicNum())
         if at.GetTotalNumHs():
             obj["impHs"]=at.GetTotalNumHs()
         if at.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED:
@@ -33,23 +32,18 @@ def moltojson(m,includePartialCharges=True):
             obj['chg'] = at.GetFormalCharge()
         if at.GetNumRadicalElectrons():
             obj['nRad'] = at.GetNumRadicalElectrons()
-        txt = json.dumps(obj)
-        if i!=m.GetNumAtoms()-1:
-            txt += ','
-        print(txt,file=sio)
-    print('],',file=sio)
-
-    print('"atomProperties":[',file=sio)
+        res["atoms"].append(obj)
+    res["atomProperties"] = []
     if includePartialCharges and m.GetAtomWithIdx(0).HasProp("_GasteigerCharge"):
-        print('{"type":"partialcharges","method":"rdkit-gasteiger",',file=sio)
-        print('"values":',[float('%.3f'%float(x.GetProp("_GasteigerCharge"))) for x in m.GetAtoms()],file=sio)
-        print('}',file=sio)
-    print('],',file=sio)
+        obj = obj_type(type="partialcharges",method="rdkit-gasteiter")
+        obj["values"] = [float('%.3f'%float(x.GetProp("_GasteigerCharge"))) for x in m.GetAtoms()]
 
-    print('"bonds":[',file=sio)
+    res["bonds"] = []
     for i,bnd in enumerate(m.GetBonds()):
         bo = {Chem.BondType.SINGLE:1,Chem.BondType.DOUBLE:2,Chem.BondType.TRIPLE:3}[bnd.GetBondType()]
-        obj = {"atoms":[bnd.GetBeginAtomIdx(),bnd.GetEndAtomIdx()],"bo":bo}
+        obj = obj_type(atoms=[bnd.GetBeginAtomIdx(),bnd.GetEndAtomIdx()])
+        if bo != 1:
+            obj["bo"] = bo
         if bnd.GetStereo() in (Chem.BondStereo.STEREOE,Chem.BondStereo.STEREOZ,Chem.BondStereo.STEREOCIS,Chem.BondStereo.STEREOTRANS):
             obj['stereoAtoms']=list(bnd.GetStereoAtoms())
             if bnd.GetStereo() in (Chem.BondStereo.STEREOCIS,Chem.BondStereo.STEREOZ):
@@ -58,19 +52,15 @@ def moltojson(m,includePartialCharges=True):
                 obj['stereo'] = 'trans'
         elif bnd.GetStereo() == Chem.BondStereo.STEREOANY:
             obj['stereo'] = 'either'
-        txt = json.dumps(obj)
-        if(i != m.GetNumBonds()-1):
-            txt += ','
-        print(txt,file=sio)
-    print('],',file=sio)
+        res["bonds"].append(obj)
 
     if m.GetNumConformers():
-        confs = []
+        res["conformers"] = []
         for conf in m.GetConformers():
             dim=3
             if not conf.Is3D():
                 dim=2
-            obj = {'dim':dim}
+            obj = obj_type(dim=dim)
             coords=[]
             for i in range(m.GetNumAtoms()):
                 pos = conf.GetAtomPosition(i)
@@ -79,22 +69,15 @@ def moltojson(m,includePartialCharges=True):
                     coord.append(pos.z)
                 coords.append([float('%.4f'%x) for x in coord])
             obj['coords']=coords
-            confs.append(obj)
-        print('"conformers": %s,'%json.dumps(confs),file=sio)
+            res["conformers"].append(obj)
 
-    print("""
-      "representations":[{
-          "toolkit":"RDKit","toolkit_version":"2018.03.1.dev1",
-          "format_version":1,""",file=sio)
-    print('"aromaticAtoms": %s,'%str([x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]),file=sio)
-    print('"aromaticBonds": %s,'%str([x.GetIdx() for x in m.GetBonds() if x.GetIsAromatic()]),file=sio)
-    rio = m.GetRingInfo()
-    print('"bondRings": %s'%[list(x) for x in rio.BondRings()],file=sio)
-    print("""}
-      ]
-    }""",file=sio)
+    obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
+    obj["aromaticAtoms"] = [x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]
+    obj["aromaticBonds"] = [x.GetIdx() for x in m.GetBonds() if x.GetIsAromatic()]
+    obj["bondRings"] = [list(x) for x in m.GetRingInfo().BondRings()]
+    res["representations"] = [obj]
 
-    return sio.getvalue()
+    return json.dumps(res)
 
 def jsontomol(text,strict=True):
     obj = json.loads(text)
@@ -114,7 +97,7 @@ def jsontomol(text,strict=True):
     # ---------------------------------
     #      Atoms
     for entry in obj['atoms']:
-        atm = Chem.Atom(entry['Z'])
+        atm = Chem.Atom(entry.get('Z',atomDefaults.get('Z',6)))
         atm.SetNoImplicit(True)
         atm.SetNumExplicitHs(entry.get('impHs',atomDefaults.get('impHs',0)))
         atm.SetFormalCharge(entry.get('chg',atomDefaults.get('chg',0)))
@@ -189,8 +172,9 @@ if(__name__=='__main__'):
     from rdkit.Chem import AllChem
     m = Chem.MolFromSmiles('c1ccccc1O/C=C\\[C@H]([NH3+])Cl')
     AllChem.Compute2DCoords(m)
+    m.SetProp("_Name","example 1")
     mjson = moltojson(m)
-    #print(mjson)
+    print(mjson)
     newm = jsontomol(mjson)
     print(Chem.MolToSmiles(newm))
     print(Chem.MolToMolBlock(newm))
