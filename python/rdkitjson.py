@@ -8,6 +8,8 @@ from rdkit.Chem import AllChem
 
 def moltojson(m,includePartialCharges=True):
     from collections import OrderedDict
+    # copy it since we're going to kekulize
+    m = Chem.Mol(m)
     if includePartialCharges:
         AllChem.ComputeGasteigerCharges(m)
     Chem.Kekulize(m)
@@ -74,7 +76,10 @@ def moltojson(m,includePartialCharges=True):
     obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
     obj["aromaticAtoms"] = [x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]
     obj["aromaticBonds"] = [x.GetIdx() for x in m.GetBonds() if x.GetIsAromatic()]
-    obj["bondRings"] = [list(x) for x in m.GetRingInfo().BondRings()]
+    obj["cipRanks"] = [int(x.GetProp("_CIPRank")) for x in m.GetAtoms()]
+    obj["cipCodes"] = [[x.GetIdx(),x.GetProp("_CIPCode")] for x in m.GetAtoms() if x.HasProp("_CIPCode")]
+
+    obj["atomRings"] = [list(x) for x in m.GetRingInfo().AtomRings()]
     res["representations"] = [obj]
 
     return json.dumps(res)
@@ -161,22 +166,54 @@ def jsontomol(text,strict=True):
                 m.GetAtomWithIdx(idx).SetIsAromatic(True)
             aromBonds = entry.get('aromaticBonds',[])
             for idx in aromBonds:
-                m.GetBondWithIdx(idx).SetIsAromatic(True)
-            # bondRings is also there, but we can't do anything with that from Python.
+                bnd = m.GetBondWithIdx(idx)
+                bnd.SetIsAromatic(True)
+                bnd.SetBondType(Chem.BondType.AROMATIC)
+            atomRings = entry.get('atomRings',[])
+            for ring in atomRings:
+                ringBonds = []
+                alist = ring+[ring[0]]
+                for i in range(len(ring)):
+                    ringBonds.append(m.GetBondBetweenAtoms(alist[i],alist[i+1]).GetIdx())
+                m.GetRingInfo().AddRing(ring,ringBonds)
+            for i,x in enumerate(entry.get('cipRanks',[])):
+                m.GetAtomWithIdx(i).SetProp('_CIPRank',str(x))
+            for i,x in entry.get('cipCodes',[]):
+                m.GetAtomWithIdx(i).SetProp('_CIPCode',x)
+                #m.GetAtomWithIdx(i).SetIntProp('_ChiralityPossible',1)
             break
-
     m.UpdatePropertyCache(strict=strict)
     m.SetIntProp("_StereochemDone",1)
     return m
 
 if(__name__=='__main__'):
     from rdkit.Chem import AllChem
-    m = Chem.MolFromSmiles('c1ccccc1O/C=C\\[C@H]([NH3+])Cl')
+    smi='c1ccccc1O/C=C\\[C@H]([NH3+])Cl'
+    smi ='Cc1nnc(SCC2CS[C@@H]3[C@H](NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
+    smi ='Cc1nnc(SCC2CS[C@@]3(C)[C@](C)(NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
+    smi ='N[C@H]1[C@H]2SCC=C(N2C1=O)C([O-])=O'
+    smi = 'Cl.CCN(CCN1c2cccc3c(C)c(C)n(c32)CC1=O)CC'
+    m = Chem.MolFromSmiles(smi)
     #AllChem.Compute2DCoords(m)
     m.SetProp("_Name","example 1")
     mjson = moltojson(m)
-    #print(mjson)
+    print(mjson)
+    print('construct')
     newm = jsontomol(mjson)
+    # print(list(m.GetPropNames(True,True)))
+    # print(list(newm.GetPropNames(True,True)))
+    # for at in m.GetAtoms():
+    #     print("   ",at.GetIdx())
+    #     print("      ",at.GetPropsAsDict())
+    #     print("      ",newm.GetAtomWithIdx(at.GetIdx()).GetPropsAsDict())
+    print('smiles')
+    print(Chem.MolToSmiles(m))
+    print(list(Chem.CanonicalRankAtoms(m)))
+    print(list(Chem.CanonicalRankAtoms(newm)))
+    print("call ")
     print(Chem.MolToSmiles(newm))
+
+    # m.Debug()
+    # newm.Debug()
     assert(Chem.MolToSmiles(newm)==Chem.MolToSmiles(m))
-    print(Chem.MolToMolBlock(newm))
+    # print(Chem.MolToMolBlock(newm))
