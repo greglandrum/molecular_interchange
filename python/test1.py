@@ -32,21 +32,25 @@ class TestCase(unittest.TestCase):
             self.assertEqual(Chem.MolToSmiles(m,isomericSmiles=True),Chem.MolToSmiles(newm,isomericSmiles=True))
 
     def test02(self):
+        if not doLong:
+            return
         for m in self.readLongFile():
             mjson = rdkitjson.moltojson(m)
             newm = rdkitjson.jsontomol(mjson)
             #Chem.SanitizeMol(newm)
             self.assertEqual(Chem.MolToSmiles(m,isomericSmiles=True),Chem.MolToSmiles(newm,isomericSmiles=True))
 
+
 if __name__ == '__main__':  # pragma: nocover
   import argparse
   import sys
+  global doLong
   parser = argparse.ArgumentParser()
   parser.add_argument('-l', default=False, action='store_true', dest='doLong')
   args = parser.parse_args()
   doLong = args.doLong
 
   # Remove the -l flag if present so that it isn't interpreted by unittest.main()
-  if 'l' in sys.argv:
+  if '-l' in sys.argv:
     sys.argv.remove('-l')
   unittest.main()
