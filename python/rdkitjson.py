@@ -20,7 +20,7 @@ def moltojson(m,includePartialCharges=True):
     obj_type = OrderedDict
     res = obj_type()
     res['header'] = obj_type(version=10,name=nm)
-    res["atomDefaults"] = obj_type(Z=6,chiral=False,impHs=0,chg=0,stereo="unspecified",nrad=0)
+    res["atomDefaults"] = obj_type(Z=6,impHs=0,chg=0,stereo="unspecified",nrad=0)
     res["bondDefaults"] = obj_type(bo=1,stereo="unspecified",stereoAtoms=[])
     res["atoms"] = []
     for i,at in enumerate(m.GetAtoms()):
@@ -76,7 +76,8 @@ def moltojson(m,includePartialCharges=True):
     obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
     obj["aromaticAtoms"] = [x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]
     obj["aromaticBonds"] = [x.GetIdx() for x in m.GetBonds() if x.GetIsAromatic()]
-    obj["cipRanks"] = [int(x.GetProp("_CIPRank")) for x in m.GetAtoms()]
+    if(m.GetAtomWithIdx(0).HasProp('_CIPRank')):
+        obj["cipRanks"] = [int(x.GetProp("_CIPRank")) for x in m.GetAtoms()]
     obj["cipCodes"] = [[x.GetIdx(),x.GetProp("_CIPCode")] for x in m.GetAtoms() if x.HasProp("_CIPCode")]
 
     obj["atomRings"] = [list(x) for x in m.GetRingInfo().AtomRings()]
@@ -188,32 +189,21 @@ def jsontomol(text,strict=True):
 
 if(__name__=='__main__'):
     from rdkit.Chem import AllChem
-    smi='c1ccccc1O/C=C\\[C@H]([NH3+])Cl'
-    smi ='Cc1nnc(SCC2CS[C@@H]3[C@H](NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
-    smi ='Cc1nnc(SCC2CS[C@@]3(C)[C@](C)(NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
-    smi ='N[C@H]1[C@H]2SCC=C(N2C1=O)C([O-])=O'
-    smi = 'Cl.CCN(CCN1c2cccc3c(C)c(C)n(c32)CC1=O)CC'
-    m = Chem.MolFromSmiles(smi)
-    #AllChem.Compute2DCoords(m)
-    m.SetProp("_Name","example 1")
+    if 0:
+        smi='c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl'
+        # smi ='Cc1nnc(SCC2CS[C@@H]3[C@H](NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
+        # smi ='Cc1nnc(SCC2CS[C@@]3(C)[C@](C)(NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
+        # smi ='N[C@H]1[C@H]2SCC=C(N2C1=O)C([O-])=O'
+        # smi = 'Cl.CCN(CCN1c2cccc3c(C)c(C)n(c32)CC1=O)CC'
+        m = Chem.MolFromSmiles(smi)
+        m.SetProp("_Name","example 1")
+    else:
+        m = Chem.AddHs(Chem.MolFromSmiles('O[C@H](Cl)F'))
+        m.SetProp("_Name","example 2")
+        AllChem.ComputeGasteigerCharges(m)
+        AllChem.Compute2DCoords(m)
+        AllChem.EmbedMolecule(m,clearConfs=False)
     mjson = moltojson(m)
     print(mjson)
-    print('construct')
     newm = jsontomol(mjson)
-    # print(list(m.GetPropNames(True,True)))
-    # print(list(newm.GetPropNames(True,True)))
-    # for at in m.GetAtoms():
-    #     print("   ",at.GetIdx())
-    #     print("      ",at.GetPropsAsDict())
-    #     print("      ",newm.GetAtomWithIdx(at.GetIdx()).GetPropsAsDict())
-    print('smiles')
-    print(Chem.MolToSmiles(m))
-    print(list(Chem.CanonicalRankAtoms(m)))
-    print(list(Chem.CanonicalRankAtoms(newm)))
-    print("call ")
-    print(Chem.MolToSmiles(newm))
-
-    # m.Debug()
-    # newm.Debug()
     assert(Chem.MolToSmiles(newm)==Chem.MolToSmiles(m))
-    # print(Chem.MolToMolBlock(newm))
