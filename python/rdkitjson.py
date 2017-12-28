@@ -75,23 +75,27 @@ def moltojson(m,includePartialCharges=True):
 
     if m.GetAtomWithIdx(0).GetPDBResidueInfo() is not None:
         residues = {}
+        chains = {}
         for a in m.GetAtoms():
             ri = a.GetPDBResidueInfo()
             if ri is None:
                 continue
             num = ri.GetResidueNumber()
-            code = ri.GetInsertionCode()
-            key = (num,code)
+            code = ri.GetInsertionCode().strip()
+            name = ri.GetResidueName()
+            chain = ri.GetChainId().strip()
+            key = (chain,num,code,name)
             if key not in residues:
                 d = {}
                 d['num'] = num
-                d['insertioncode'] = code
-                d['name'] = ri.GetResidueName()
+                if code:
+                    d['insertioncode'] = code
+                d['name'] = name
                 d['atoms'] = []
                 d['atomNames'] = []
                 d['serialnumbers'] = []
-                # include serial number?
                 residues[key] = d
+                d['idx'] = len(residues)
             residue = residues[key]
             if ri.GetIsHeteroAtom():
                 residue['containsHetatms'] = True
@@ -99,7 +103,14 @@ def moltojson(m,includePartialCharges=True):
             residue['atomNames'].append(ri.GetName())
             residue['serialnumbers'].append(ri.GetSerialNumber())
 
+            if chain:
+                if chain not in chains:
+                    chains[chain] = {'name':chain,'residues':[]}
+                if residue['idx'] not in chains[chain]['residues']:
+                    chains[chain]['residues'].append(residue['idx'])
+
         res['residues'] = [residues[x] for x in sorted(residues)]
+        res['chains'] = [chains[x] for x in sorted(chains)]
 
 
     obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
@@ -229,7 +240,8 @@ if(__name__=='__main__'):
     else:
         from rdkit import RDConfig
         import os
-        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
+        #m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
+        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','github1029.1jld.pdb'))
     mjson = moltojson(m)
     print(mjson)
     newm = jsontomol(mjson)
