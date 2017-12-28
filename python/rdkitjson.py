@@ -73,6 +73,35 @@ def moltojson(m,includePartialCharges=True):
             obj['coords']=coords
             res["conformers"].append(obj)
 
+    if m.GetAtomWithIdx(0).GetPDBResidueInfo() is not None:
+        residues = {}
+        for a in m.GetAtoms():
+            ri = a.GetPDBResidueInfo()
+            if ri is None:
+                continue
+            num = ri.GetResidueNumber()
+            code = ri.GetInsertionCode()
+            key = (num,code)
+            if key not in residues:
+                d = {}
+                d['num'] = num
+                d['insertioncode'] = code
+                d['name'] = ri.GetResidueName()
+                d['atoms'] = []
+                d['atomNames'] = []
+                d['serialnumbers'] = []
+                # include serial number?
+                residues[key] = d
+            residue = residues[key]
+            if ri.GetIsHeteroAtom():
+                residue['containsHetatms'] = True
+            residue['atoms'].append(a.GetIdx())
+            residue['atomNames'].append(ri.GetName())
+            residue['serialnumbers'].append(ri.GetSerialNumber())
+
+        res['residues'] = [residues[x] for x in sorted(residues)]
+
+
     obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
     obj["aromaticAtoms"] = [x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]
     obj["aromaticBonds"] = [x.GetIdx() for x in m.GetBonds() if x.GetIsAromatic()]
@@ -198,11 +227,9 @@ if(__name__=='__main__'):
         m = Chem.MolFromSmiles(smi)
         m.SetProp("_Name","example 1")
     else:
-        m = Chem.AddHs(Chem.MolFromSmiles('O[C@H](Cl)F'))
-        m.SetProp("_Name","example 2")
-        AllChem.ComputeGasteigerCharges(m)
-        AllChem.Compute2DCoords(m)
-        AllChem.EmbedMolecule(m,clearConfs=False)
+        from rdkit import RDConfig
+        import os
+        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
     mjson = moltojson(m)
     print(mjson)
     newm = jsontomol(mjson)
