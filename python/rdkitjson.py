@@ -226,9 +226,9 @@ def jsontomols(text,strict=True):
                 at = m.GetAtomWithIdx(aidx)
                 if at.GetPDBResidueInfo():
                     raise ValueError("atom %d appears in multiple residues"%aidx)
-                at.SetMonomerInfo(Chem.AtomPDBResidueInfo(anm,serialNumber=snum,residueNumber=num,
+                at.SetMonomerInfo(Chem.AtomPDBResidueInfo(anm,residueName=rnm,
+                serialNumber=snum,residueNumber=num,
                 chainId=chain,isHeteroAtom=hets))
-
 
         # ---------------------------------
         #      representation
@@ -275,10 +275,14 @@ if(__name__=='__main__'):
     else:
         from rdkit import RDConfig
         import os
-        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
-        #m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','github1029.1jld.pdb'))
+        #m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
+        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','github1029.1jld.pdb'))
         #m = Chem.MolFromSequence('AAKWL')
     mjson = molstojson([m])
     print(mjson)
     newm = jsontomols(mjson)[0]
     assert(Chem.MolToSmiles(newm)==Chem.MolToSmiles(m))
+    if m.GetAtomWithIdx(0).GetPDBResidueInfo():
+        # print(Chem.MolToSequence(m))
+        # print(Chem.MolToSequence(newm))
+        assert(Chem.MolToSequence(newm)==Chem.MolToSequence(m))
