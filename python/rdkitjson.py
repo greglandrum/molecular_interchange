@@ -162,8 +162,13 @@ def jsontomols(text,strict=True):
         # ---------------------------------
         #      Atom Properties
         for entry in mobj.get('atomProperties',[]):
-            # we ignore these for the moment
-            pass
+            if entry["type"] == "partialcharges":
+                if entry["method"] == "rdkit-gasteiger":
+                    pnm = "_GasteigerCharge"
+                else:
+                    pnm = "_partialcharge"
+                for i,v in enumerate(entry['values']):
+                    m.GetAtomWithIdx(i).SetDoubleProp(pnm,v)
 
         # ---------------------------------
         #      Bonds
@@ -211,10 +216,6 @@ def jsontomols(text,strict=True):
                     raise ValueError("residue %d appears more than once in chain definitions"%residue)
                 chainLookup[residue] = cnm
         for residue in mobj.get("residues",[]):
-            """{"num": 97, "name": "LEU", "atoms": [1485, 1486, 1487, 1488, 1489, 1490, 1491, 1492],
-            "atomNames": [" N  ", " CA ", " C  ", " O  ", " CB ", " CG ", " CD1", " CD2"],
-            "serialnumbers": [3014, 3016, 3018, 3019, 3020, 3023, 3025, 3029],
-            "idx": 196}"""
             idx = residue['idx']
             chain = chainLookup[idx]
             num = residue['num']
