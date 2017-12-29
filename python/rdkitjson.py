@@ -97,7 +97,7 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
                     d['name'] = name
                     d['atoms'] = []
                     d['atomNames'] = []
-                    d['serialnumbers'] = []
+                    d['serialNumbers'] = []
                     residues[key] = d
                     d['idx'] = len(residues)
                 residue = residues[key]
@@ -105,7 +105,7 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
                     residue['containsHetatms'] = True
                 residue['atoms'].append(a.GetIdx())
                 residue['atomNames'].append(ri.GetName())
-                residue['serialnumbers'].append(ri.GetSerialNumber())
+                residue['serialNumbers'].append(ri.GetSerialNumber())
 
                 if chain:
                     if chain not in chains:
@@ -130,10 +130,12 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
     return json.dumps(res)
 
 def jsontomols(text,strict=True):
+    from collections import defaultdict
+
     obj = json.loads(text)
-    if obj['header']['version'] != 10:
+    if obj['moljson-header']['version'] != 10:
         raise ValueError('bad version %s'%obj['header']['version'])
-    nm = obj['header']['name']
+    nm = obj['moljson-header']['name']
     if 'atomDefaults' in obj:
         atomDefaults = obj['atomDefaults']
     else:
@@ -203,6 +205,31 @@ def jsontomols(text,strict=True):
                 conf.SetAtomPosition(i,Chem.rdGeometry.Point3D(coord[0],coord[1],coord[2]))
             m.AddConformer(conf,assignId=True)
 
+        chainLookup=defaultdict(str)
+        for chain in mobj.get("chains"):
+            cnm = chain["name"]
+            for residue in chain["residues"]:
+                if residue in chainLookup:
+                    raise ValueError("residue %d appears more than once in chain definitions"%residue)
+                chainLookup[residue] = cnm
+        for residue in mobj.get("residues"):
+            """{"num": 97, "name": "LEU", "atoms": [1485, 1486, 1487, 1488, 1489, 1490, 1491, 1492],
+            "atomNames": [" N  ", " CA ", " C  ", " O  ", " CB ", " CG ", " CD1", " CD2"],
+            "serialnumbers": [3014, 3016, 3018, 3019, 3020, 3023, 3025, 3029],
+            "idx": 196}"""
+            idx = residue['idx']
+            chain = chainLookup[idx]
+            num = residue['num']
+            rnm = residue['name']
+            hets = residue.get('containsHetatms',False)
+            for aidx,anm,snum in zip(residue['atoms'],residue['atomNames'],residue['serialNumbers']):
+                at = m.GetAtomWithIdx(aidx)
+                if at.GetPDBResidueInfo():
+                    raise ValueError("atom %d appears in multiple residues"%aidx)
+                at.SetMonomerInfo(Chem.AtomPDBResidueInfo(anm,serialNumber=snum,residueNumber=num,
+                chainId=chain,isHeteroAtom=hets))
+
+
         # ---------------------------------
         #      representation
         for entry in mobj.get('representations'):
@@ -248,8 +275,9 @@ if(__name__=='__main__'):
     else:
         from rdkit import RDConfig
         import os
-        #m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
-        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','github1029.1jld.pdb'))
+        m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','1CRN.pdb'))
+        #m = Chem.MolFromPDBFile(os.path.join(RDConfig.RDBaseDir,'Code','GraphMol','FileParsers','test_data','github1029.1jld.pdb'))
+        #m = Chem.MolFromSequence('AAKWL')
     mjson = molstojson([m])
     print(mjson)
     newm = jsontomols(mjson)[0]
