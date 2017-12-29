@@ -17,7 +17,7 @@ AllChem.EmbedMolecule(m,clearConfs=False)
 mols.append(m)
 
 for m in mols:
-    mjson = rdkitjson.moltojson(m)
+    mjson = rdkitjson.molstojson([m])
     print(mjson.replace('}, ','},\n ').replace('], "','], \n"'))
-    newm = rdkitjson.jsontomol(mjson)
+    newm = rdkitjson.jsontomols(mjson)[0]
     assert(Chem.MolToSmiles(newm)==Chem.MolToSmiles(m))
