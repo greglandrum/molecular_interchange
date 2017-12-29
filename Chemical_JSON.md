@@ -53,7 +53,7 @@ These are expressed in JSON since it's a simple functional way to show the data 
 ## Small molecule without coordinates
 This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl`
 ```
-{"header": {"version": 10, "name": "example molecules"},
+{"moljson-header": {"version": 10, "name": "example molecules"},
  "atomDefaults": {"Z": 6, "impHs": 0, "chg": 0, "stereo": "unspecified", "nrad": 0},
  "bondDefaults": {"bo": 1, "stereo": "unspecified", "stereoAtoms": []},
  "molecules": [
@@ -102,7 +102,7 @@ This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl`
 
 Corresponds to SMILES `O[C@H](Cl)F`
 ```
-{"header": {"version": 10, "name": "example molecules"},
+{"moljson-header": {"version": 10, "name": "example molecules"},
  "atomDefaults": {"Z": 6, "impHs": 0, "chg": 0, "stereo": "unspecified", "nrad": 0},
  "bondDefaults": {"bo": 1, "stereo": "unspecified", "stereoAtoms": []},
  "molecules": [

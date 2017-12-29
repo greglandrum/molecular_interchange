@@ -12,7 +12,7 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
     obj = {}
     obj_type = OrderedDict
     res = obj_type()
-    res['header'] = obj_type(version=10,name=collectionName)
+    res['moljson-header'] = obj_type(version=10,name=collectionName)
     res["atomDefaults"] = obj_type(Z=6,impHs=0,chg=0,stereo="unspecified",nrad=0)
     res["bondDefaults"] = obj_type(bo=1,stereo="unspecified",stereoAtoms=[])
     res["molecules"] = []
@@ -115,7 +115,6 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
 
             mres['residues'] = [residues[x] for x in sorted(residues)]
             mres['chains'] = [chains[x] for x in sorted(chains)]
-
 
         obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
         obj["aromaticAtoms"] = [x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]
@@ -238,7 +237,7 @@ def jsontomols(text,strict=True):
 
 if(__name__=='__main__'):
     from rdkit.Chem import AllChem
-    if 1:
+    if 0:
         smi='c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl'
         # smi ='Cc1nnc(SCC2CS[C@@H]3[C@H](NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
         # smi ='Cc1nnc(SCC2CS[C@@]3(C)[C@](C)(NC(=O)Cn4cnnn4)C(=O)N3C=2C(=O)[O-])s1.[Na+]'
