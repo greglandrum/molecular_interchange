@@ -18,8 +18,6 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
     res["molecules"] = []
     for m in ms:
         m = Chem.Mol(m)
-        if includePartialCharges:
-            AllChem.ComputeGasteigerCharges(m)
         Chem.Kekulize(m)
         nm = "no name"
         if m.HasProp("_Name"):
@@ -39,11 +37,11 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
             if at.GetNumRadicalElectrons():
                 obj['nRad'] = at.GetNumRadicalElectrons()
             mres["atoms"].append(obj)
-        mres["atomProperties"] = []
         if includePartialCharges and m.GetAtomWithIdx(0).HasProp("_GasteigerCharge"):
-            obj = obj_type(type="partialcharges",method="rdkit-gasteiter")
+            mres["atomProperties"] = []
+            obj = obj_type(type="partialcharges",method="rdkit-gasteiger")
             obj["values"] = [float('%.3f'%float(x.GetProp("_GasteigerCharge"))) for x in m.GetAtoms()]
-
+            mres["atomProperties"].append(obj)
         mres["bonds"] = []
         for i,bnd in enumerate(m.GetBonds()):
             bo = {Chem.BondType.SINGLE:1,Chem.BondType.DOUBLE:2,Chem.BondType.TRIPLE:3}[bnd.GetBondType()]
@@ -163,7 +161,7 @@ def jsontomols(text,strict=True):
             m.AddAtom(atm)
         # ---------------------------------
         #      Atom Properties
-        for entry in mobj['atomProperties']:
+        for entry in mobj.get('atomProperties',[]):
             # we ignore these for the moment
             pass
 
@@ -206,13 +204,13 @@ def jsontomols(text,strict=True):
             m.AddConformer(conf,assignId=True)
 
         chainLookup=defaultdict(str)
-        for chain in mobj.get("chains"):
+        for chain in mobj.get("chains",[]):
             cnm = chain["name"]
             for residue in chain["residues"]:
                 if residue in chainLookup:
                     raise ValueError("residue %d appears more than once in chain definitions"%residue)
                 chainLookup[residue] = cnm
-        for residue in mobj.get("residues"):
+        for residue in mobj.get("residues",[]):
             """{"num": 97, "name": "LEU", "atoms": [1485, 1486, 1487, 1488, 1489, 1490, 1491, 1492],
             "atomNames": [" N  ", " CA ", " C  ", " O  ", " CB ", " CG ", " CD1", " CD2"],
             "serialnumbers": [3014, 3016, 3018, 3019, 3020, 3023, 3025, 3029],
@@ -285,4 +283,5 @@ if(__name__=='__main__'):
     if m.GetAtomWithIdx(0).GetPDBResidueInfo():
         # print(Chem.MolToSequence(m))
         # print(Chem.MolToSequence(newm))
+        # print(Chem.MolToPDBBlock(m))
         assert(Chem.MolToSequence(newm)==Chem.MolToSequence(m))
