@@ -261,13 +261,16 @@ def jsontomols(text,strict=True):
                     bnd = m.GetBondWithIdx(idx)
                     bnd.SetIsAromatic(True)
                     bnd.SetBondType(Chem.BondType.AROMATIC)
-                atomRings = entry.get('atomRings',[])
-                for ring in atomRings:
-                    ringBonds = []
-                    alist = ring+[ring[0]]
-                    for i in range(len(ring)):
-                        ringBonds.append(m.GetBondBetweenAtoms(alist[i],alist[i+1]).GetIdx())
-                    m.GetRingInfo().AddRing(ring,ringBonds)
+                if hasattr(Chem.RingInfo,'AddRing'):  #<- needed to be added
+                    atomRings = entry.get('atomRings',[])
+                    for ring in atomRings:
+                        ringBonds = []
+                        alist = ring+[ring[0]]
+                        for i in range(len(ring)):
+                            ringBonds.append(m.GetBondBetweenAtoms(alist[i],alist[i+1]).GetIdx())
+                        m.GetRingInfo().AddRing(ring,ringBonds)
+                else:
+                    Chem.GetSymmSSSR(m)
                 for i,x in enumerate(entry.get('cipRanks',[])):
                     m.GetAtomWithIdx(i).SetProp('_CIPRank',str(x))
                 for i,x in entry.get('cipCodes',[]):
