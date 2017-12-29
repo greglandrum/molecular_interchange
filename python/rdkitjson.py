@@ -113,6 +113,9 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
 
             mres['residues'] = [residues[x] for x in sorted(residues)]
             mres['chains'] = [chains[x] for x in sorted(chains)]
+        mprops = m.GetPropsAsDict()
+        if mprops:
+            mres["molProperties"] = mprops
 
         obj = obj_type(toolkit="RDKit",toolkit_version=rdBase.rdkitVersion,format_version=1)
         obj["aromaticAtoms"] = [x.GetIdx() for x in m.GetAtoms() if x.GetIsAromatic()]
@@ -208,6 +211,21 @@ def jsontomols(text,strict=True):
                 conf.SetAtomPosition(i,Chem.rdGeometry.Point3D(coord[0],coord[1],coord[2]))
             m.AddConformer(conf,assignId=True)
 
+        # ---------------------------------
+        #      Properties
+        props = mobj.get("molProperties",{})
+        for p in props:
+            v = props[p]
+            if type(v) == float:
+                m.SetDoubleProp(p,v)
+            elif type(v) == int:
+                m.SetIntProp(p,v)
+            else:
+                m.SetProp(p,str(v))
+
+
+        # ---------------------------------
+        #      Residue information
         chainLookup=defaultdict(str)
         for chain in mobj.get("chains",[]):
             cnm = chain["name"]

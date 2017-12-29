@@ -7,6 +7,9 @@ mols = []
 smi='c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl'
 m = Chem.MolFromSmiles(smi)
 m.SetProp("_Name","example 1")
+m.SetIntProp("prop1",1)
+m.SetDoubleProp("prop2",3.14)
+m.SetProp("prop3","foo")
 mols.append(m)
 
 m = Chem.AddHs(Chem.MolFromSmiles('O[C@H](Cl)F'))

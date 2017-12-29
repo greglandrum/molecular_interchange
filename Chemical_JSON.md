@@ -51,7 +51,7 @@ In order to maximize efficiency, authors of toolkits may want to store precomput
 These are expressed in JSON since it's a simple functional way to show the data model. As mentioned above, we aren't tied to only using JSON.
 
 ## Small molecule without coordinates
-This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl`
+This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl` and includes molecular properties:
 ```
 {"moljson-header": {"version": 10, "name": "example molecules"},
  "atomDefaults": {"Z": 6, "impHs": 0, "chg": 0, "stereo": "unspecified", "nrad": 0},
@@ -88,6 +88,7 @@ This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl`
              {"atoms": [12, 13]},
              {"atoms": [12, 14]},
              {"atoms": [8, 0]}],
+   "molProperties": {"prop1": 1, "prop2": 3.14, "prop3": "foo"},
    "representations": [{"toolkit": "RDKit", "toolkit_version": "2018.03.1.dev1",
                         "format_version": 1,
                         "aromaticAtoms": [0, 1, 5, 6, 7, 8],
@@ -99,7 +100,7 @@ This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl`
 
 ## Small molecule with multiple conformers
 
-Corresponds to SMILES `O[C@H](Cl)F`
+Corresponds to SMILES `O[C@H](Cl)F` and includes partial charges:
 ```
 {"moljson-header": {"version": 10, "name": "example molecules"},
  "atomDefaults": {"Z": 6, "impHs": 0, "chg": 0, "stereo": "unspecified", "nrad": 0},
