@@ -282,6 +282,12 @@ def jsontomols(text,strict=True):
         mols.append(m)
     return mols
 
+def moltojson(m,**kwargs):
+  return molstojson([m],**kwargs)
+def jsontomol(mjson,**kwargs):
+  return jsontomols(mjson,**kwargs)[0]
+
+
 if(__name__=='__main__'):
     from rdkit.Chem import AllChem
     if 0:
