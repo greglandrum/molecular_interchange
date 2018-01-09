@@ -44,7 +44,7 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
             mres["atomProperties"].append(obj)
         mres["bonds"] = []
         for i,bnd in enumerate(m.GetBonds()):
-            bo = {Chem.BondType.SINGLE:1,Chem.BondType.DOUBLE:2,Chem.BondType.TRIPLE:3}[bnd.GetBondType()]
+            bo = {Chem.BondType.ZERO:0,Chem.BondType.SINGLE:1,Chem.BondType.DOUBLE:2,Chem.BondType.TRIPLE:3}[bnd.GetBondType()]
             obj = obj_type(atoms=[bnd.GetBeginAtomIdx(),bnd.GetEndAtomIdx()])
             if bo != 1:
                 obj["bo"] = bo
@@ -179,7 +179,7 @@ def jsontomols(text,strict=True):
         # that info for a bit
         bondStereos={}
         for entry in mobj['bonds']:
-            bos = {1:Chem.BondType.SINGLE,2:Chem.BondType.DOUBLE,3:Chem.BondType.TRIPLE}
+            bos = {0:Chem.BondType.ZERO,1:Chem.BondType.SINGLE,2:Chem.BondType.DOUBLE,3:Chem.BondType.TRIPLE}
             bo = bos[entry.get('bo',bondDefaults.get('bo',Chem.BondType.SINGLE))]
             nbs = m.AddBond(entry['atoms'][0],entry['atoms'][1],bo)
             bnd = m.GetBondWithIdx(nbs-1)

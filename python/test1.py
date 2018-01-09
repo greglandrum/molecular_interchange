@@ -40,6 +40,15 @@ class TestCase(unittest.TestCase):
             #Chem.SanitizeMol(newm)
             self.assertEqual(Chem.MolToSmiles(m,isomericSmiles=True),Chem.MolToSmiles(newm,isomericSmiles=True))
 
+    def testzbo(self):
+        m = Chem.RWMol(Chem.MolFromSmiles('C=O.[Fe]'))
+        m.AddBond(1,2,Chem.BondType.ZERO)
+        mjson = rdkitjson.moltojson(m)
+        print(mjson)
+        newm = rdkitjson.jsontomol(mjson)
+        self.assertTrue(newm.GetBondBetweenAtoms(1,2))
+        self.assertEqual(newm.GetBondBetweenAtoms(1,2).GetBondType(),Chem.BondType.ZERO)
+
 
 if __name__ == '__main__':  # pragma: nocover
   import argparse
