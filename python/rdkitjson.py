@@ -13,7 +13,7 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
     obj_type = OrderedDict
     res = obj_type()
     res['moljson-header'] = obj_type(version=10,name=collectionName)
-    res["atomDefaults"] = obj_type(Z=6,impHs=0,chg=0,stereo="unspecified",nrad=0)
+    res["atomDefaults"] = obj_type(Z=6,impHs=0,chg=0,stereo="unspecified",nrad=0,isotope=0)
     res["bondDefaults"] = obj_type(bo=1,stereo="unspecified",stereoAtoms=[])
     res["molecules"] = []
     for m in ms:
@@ -36,6 +36,8 @@ def molstojson(ms,includePartialCharges=True,collectionName='example molecules')
                 obj['chg'] = at.GetFormalCharge()
             if at.GetNumRadicalElectrons():
                 obj['nRad'] = at.GetNumRadicalElectrons()
+            if at.GetIsotope():
+                obj['isotope'] = at.GetIsotope()
             mres["atoms"].append(obj)
         if includePartialCharges and m.GetAtomWithIdx(0).HasProp("_GasteigerCharge"):
             mres["atomProperties"] = []
@@ -161,6 +163,7 @@ def jsontomols(text,strict=True):
                   'cw':Chem.ChiralType.CHI_TETRAHEDRAL_CW,'other':Chem.ChiralType.CHI_OTHER}
             atm.SetChiralTag(tags[entry.get('stereo',atomDefaults.get('stereo','unspecified'))])
             atm.SetNumRadicalElectrons(entry.get('nRad',atomDefaults.get('nRad',0)))
+            atm.SetIsotope(entry.get('isotope',atomDefaults.get('isotope',0)))
             m.AddAtom(atm)
         # ---------------------------------
         #      Atom Properties

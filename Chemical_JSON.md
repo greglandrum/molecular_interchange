@@ -54,7 +54,7 @@ These are expressed in JSON since it's a simple functional way to show the data 
 This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl` and includes molecular properties:
 ```
 {"moljson-header": {"version": 10, "name": "example molecules"},
- "atomDefaults": {"Z": 6, "impHs": 0, "chg": 0, "stereo": "unspecified", "nrad": 0},
+ "atomDefaults": {"chg": 0, "stereo": "unspecified", "impHs": 0, "nrad": 0, "isotope": 0, "Z": 6},
  "bondDefaults": {"bo": 1, "stereo": "unspecified", "stereoAtoms": []},
  "molecules": [
   {"name": "example 1",
@@ -100,16 +100,16 @@ This corresponds to the SMILES `c1c(C=CC)cccc1O/C=C\\[C@H]([NH3+])Cl` and includ
 
 ## Small molecule with multiple conformers
 
-Corresponds to SMILES `O[C@H](Cl)F` and includes partial charges:
+Corresponds to SMILES `O[C@H]([35Cl])F` and includes partial charges:
 ```
 {"moljson-header": {"version": 10, "name": "example molecules"},
- "atomDefaults": {"Z": 6, "impHs": 0, "chg": 0, "stereo": "unspecified", "nrad": 0},
+ "atomDefaults": {"chg": 0, "stereo": "unspecified", "impHs": 0, "nrad": 0, "isotope": 0, "Z": 6},
  "bondDefaults": {"bo": 1, "stereo": "unspecified", "stereoAtoms": []},
  "molecules": [
   {"name": "example 2",
    "atoms": [{"Z": 8},
              {"Z": 6, "stereo": "ccw"},
-             {"Z": 17},
+             {"Z": 17, "isotope": 35},
              {"Z": 9},
              {"Z": 1},
              {"Z": 1}],
