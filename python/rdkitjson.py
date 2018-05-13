@@ -5,6 +5,7 @@
 import json
 from rdkit import rdBase,Chem
 from rdkit.Chem import AllChem
+raise NotImplementedError("should not be used")
 
 def molstojson(ms,includePartialCharges=True,collectionName='example molecules'):
     from collections import OrderedDict
